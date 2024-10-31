@@ -17,7 +17,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background-color: #f7f9fc;
+            background-color: purple;
         }
         .login-card {
             max-width: 400px;
@@ -37,12 +37,13 @@
             display: block;
             margin-top: 1rem;
             font-size: 0.9rem;
+            color: purple;
         }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <h1>Login</h1>
+    <div class="login-card shadow-lg p-5">
+        <h1 class="p-2 rounded" style="background: purple; color: white">Hallmarkmovies & Mysteries</h1>
         <form id="loginForm">
             <div class="form-group">
                 <label for="email">Email address</label>
@@ -52,7 +53,7 @@
                 <label for="password">Password</label>
                 <input type="password" class="form-control" id="password" placeholder="Enter password" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
+            <button type="submit" class="btn p-3 text-white btn-block" style="background:purple">Login</button>
             <a href="register.html" class="register-link">Don't have an account? Register here</a>
         </form>
     </div>

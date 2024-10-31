@@ -7,7 +7,16 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+
+
+
+<style> 
+    body{
+       color: white;
+    }
+    </style>
+
+<body style="background: purple;">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="admin-dashboard.html">SWINGIFY ADMIN DASHBOARD</a>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -199,7 +208,7 @@
                 // Populate deposit requests
                 data.pendingDeposits.forEach(deposit => {
                     depositRequests.innerHTML += `
-                        <tr>
+                        <tr style="color: white">
                             <td>${deposit.userId.name}</td>
                             <td>$${deposit.amount}</td>
                             <td>${deposit.plan || 'N/A'}</td>
@@ -215,7 +224,7 @@
                 // Populate withdrawal requests
                 data.pendingWithdrawals.forEach(withdrawal => {
                     withdrawRequests.innerHTML += `
-                        <tr>
+                        <tr style="color: white">
                             <td>${withdrawal.userId.name}</td>
                             <td>$${withdrawal.amount}</td>
                             <td>${withdrawal.walletAddress || 'N/A'}</td>
@@ -231,7 +240,7 @@
                 // Populate all users
                 data.allUsers.forEach(user => {
                     allUsers.innerHTML += `
-                        <tr>
+                        <tr style="color: white">
                             <td>${user.name}</td>
                             <td>${user.email}</td>
                             <td>$${user.balance}</td>
@@ -253,7 +262,7 @@
                 // Populate proofs of payment
                 proofsData.forEach(proof => {
                     proofsOfPayment.innerHTML += `
-                        <tr>
+                        <tr style="color: white">
                             <td>${proof.userId.name}</td>
                             <td>$${proof.amount}</td>
                             <td><a href="${proof.proof}" target="_blank">View Proof</a></td>
@@ -375,7 +384,7 @@ async function fetchAllUsers() {
         const users = await response.json();
         users.forEach(user => {
             allUsers.innerHTML += `
-                <tr>
+                <tr style="color: white">
                     <td>${user.name}</td>
                     <td>${user.email}</td>
                     <td>$${user.balance}</td>
@@ -438,7 +447,7 @@ async function makeDeposit(event) {
 
         users.forEach(user => {
             userProfits.innerHTML += `
-                <tr>
+                <tr style="color: white">
                     <td>${user.name}</td>
                     <td>${user.email}</td>
                     <td>$${user.profits}</td>
@@ -507,7 +516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             data.pendingWithdrawals.forEach(withdrawal => {
                 withdrawRequests.innerHTML += `
-                    <tr>
+                    <tr style="color: white">
                         <td>${withdrawal.userId.name}</td>
                         <td>$${withdrawal.amount}</td>
                         <td>${withdrawal.walletAddress || 'N/A'}</td>
