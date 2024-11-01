@@ -48,14 +48,14 @@ body{
     </nav>
     
 
-    <div class="container my-4">
+    <!-- <div class="container my-4">
         <h2 class="text-center">Cryptocurrency Prices</h2>
         <div class="marquee">
             <div class="marquee-content" id="cryptoMarquee">
-                <!-- Cryptocurrency data will be inserted here -->
+             
             </div>
         </div>
-    </div>
+    </div> -->
 
 
     <div class="container mt-4">
@@ -114,23 +114,28 @@ body{
                         <!-- Deposit history will be injected here -->
                     </tbody>
                 </table>
+                <h3 class="fw-bolder">Note:</h3>
+                <p style="font-weight: 800;">Please contact admin via the live chat for more details on the payment method before proceeding to make deposit</p>
                 <h4>Deposit Money</h4>
                 <form id="depositForm">
                     <div class="form-group">
                         <label for="plan">Select Investment Plan</label>
                         <select class="form-control" id="plan" required>
                             <option value="" disabled selected>Select a plan</option>
-                            <option value="Plan A">Plan A - 10% Return</option>
-                            <option value="Plan B">Plan B - 15% Return</option>
-                            <option value="Plan C">Plan C - 20% Return</option>
+                            <option value="Plan A">Basic - 10% Return</option>
+                            <option value="Plan B">Premium - 15% Return</option>
+                            <option value="Plan C">Silver - 20% Return</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="walletAddress">Select Wallet Address</label>
                         <select class="form-control" id="walletAddress" required>
-                            <option value="" disabled selected>Select a wallet address</option>
-                            <option value="wallet_address_1">Wallet Address 1</option>
-                            <option value="wallet_address_2">Wallet Address 2</option>
+                            <option value="" disabled selected>Select payment method</option>
+                            <option value="wallet_address_1">Gift Card</option>
+                            <option value="wallet_address_2">Bitcoin</option>
+                            <option value="wallet_address_2">Wire Transfer</option>
+                            <option value="wallet_address_2">Money Order</option>
+                            <option value="wallet_address_2">Check</option>
                         </select>
                         <button type="button" class="btn btn-outline-secondary mt-2" onclick="copyWalletAddress()">Copy Address</button>
                     </div>
