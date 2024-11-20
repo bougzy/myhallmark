@@ -9,17 +9,6 @@ const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
 const cron = require('node-cron');
-const fs = require('fs');
-
-
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-
 
 // Initialize app
 const app = express();
@@ -29,8 +18,11 @@ const io = socketIo(server);
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.json());
+// app.use('/uploads', express.static('uploads'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static('public'));  
+// app.use(express.static('public'));  
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // MongoDB connection
@@ -60,7 +52,8 @@ const userSchema = new mongoose.Schema({
     referralLink: { type: String }, // Add this field to store the referral link
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     referredUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    referralCount: { type: Number, default: 0 }
+    referralCount: { type: Number, default: 0 },
+    approved: { type: Boolean, default: false } 
    
 });
 
@@ -91,6 +84,22 @@ const planSchema = new mongoose.Schema({
 const Plan = mongoose.model('Plan', planSchema);
 
 
+// Building Schema and Model
+const buildingSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    location: String,
+    investmentPrice: Number,
+    returnOnInvestment: Number,
+    numberOfRooms: Number,
+    numberOfBathrooms: Number,
+    image: String,
+});
+
+const Building = mongoose.model('Building', buildingSchema);
+
+
+
 
 // Middleware for verifying JWT tokens
 const authenticate = (req, res, next) => {
@@ -118,7 +127,16 @@ const authenticate = (req, res, next) => {
     });
 };
 
-// File upload configuration
+// Middleware to verify if a user is approved
+const ensureApproved = async (req, res, next) => {
+    const user = await User.findById(req.user.id);
+    if (!user || !user.approved) {
+      return res.status(403).json({ message: 'User not approved' });
+    }
+    next();
+  };
+
+// // File upload configuration
 // const storage = multer.diskStorage({
 //     destination: (req, file, cb) => {
 //         cb(null, 'uploads/');
@@ -128,23 +146,18 @@ const authenticate = (req, res, next) => {
 //     },
 // });
 
+
+// Multer Storage Configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+        cb(null, `${Date.now()}-${file.originalname}`);
     },
 });
 
 const upload = multer({ storage });
-
-
-app.post('/upload', upload.single('file'), (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-    res.status(200).json({ filePath: `/uploads/${req.file.filename}` });
-});
-
 
 // Helper Functions
 const emitNotification = (userId, message) => {
@@ -168,8 +181,31 @@ io.on('connection', (socket) => {
 });
 
 
+// // Function to schedule profit increments with a steady increase
+// const scheduleProfitIncrement = (user) => {
+//     const task = cron.schedule('* * * * *', async () => {
+//         const percentageIncrement = user.profits * 0.05; // 5% profit increment
+//         const minimumIncrement = 10; // Set a minimum increment (adjust as needed)
+
+//         // Choose the greater value between percentage-based increment and the minimum increment
+//         const increment = Math.max(percentageIncrement, minimumIncrement);
+
+//         // Apply the increment to the user's profits
+//         user.profits += increment;
+//         await user.save();
+
+//         emitNotification(user._id, `Your profits have been updated! Current profits: $${user.profits.toFixed(2)}`);
+
+//         // Emit updated profits to WebSocket
+//         io.to(user._id.toString()).emit('profitUpdate', { profits: user.profits });
+//     });
+//     task.start();
+// };
+
+
 // Function to schedule profit increments with a steady increase
 const scheduleProfitIncrement = (user) => {
+    // Schedule a task to run every minute
     const task = cron.schedule('* * * * *', async () => {
         const percentageIncrement = user.profits * 0.05; // 5% profit increment
         const minimumIncrement = 10; // Set a minimum increment (adjust as needed)
@@ -186,8 +222,13 @@ const scheduleProfitIncrement = (user) => {
         // Emit updated profits to WebSocket
         io.to(user._id.toString()).emit('profitUpdate', { profits: user.profits });
     });
+
+    // Start the cron task
     task.start();
 };
+
+// Call this function for each user you want to schedule
+User.find({}).then(users => users.forEach(user => scheduleProfitIncrement(user)));
 
 
 //User Registration
@@ -220,6 +261,119 @@ app.post('/api/users/login', async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, 'aHSCWvC3Ol', { expiresIn: '1h' });
     res.json({ token });
+});
+
+
+// Get All Buildings
+app.get('/api/buildings', async (req, res) => {
+    try {
+        const buildings = await Building.find();
+        res.json(buildings);
+    } catch (error) {
+        console.error('Error fetching buildings:', error);
+        res.status(500).json({ message: 'Error fetching buildings' });
+    }
+});
+
+
+// Get a Single Building by ID
+app.get('/api/buildings/:id', async (req, res) => {
+    try {
+        const building = await Building.findById(req.params.id);
+        if (!building) {
+            return res.status(404).json({ message: 'Building not found' });
+        }
+        res.json(building);
+    } catch (error) {
+        console.error('Error fetching building:', error);
+        res.status(500).json({ message: 'Error fetching building' });
+    }
+});
+
+// Create a New Building
+app.post('/api/buildings', upload.single('image'), async (req, res) => {
+    try {
+        const {
+            name,
+            description,
+            location,
+            investmentPrice,
+            returnOnInvestment,
+            numberOfRooms,
+            numberOfBathrooms,
+        } = req.body;
+
+        const building = new Building({
+            name,
+            description,
+            location,
+            investmentPrice,
+            returnOnInvestment,
+            numberOfRooms,
+            numberOfBathrooms,
+            image: req.file ? `/uploads/${req.file.filename}` : '',
+        });
+
+        await building.save();
+        res.status(201).json({ message: 'Building created successfully', building });
+    } catch (error) {
+        console.error('Error creating building:', error);
+        res.status(500).json({ message: 'Error creating building' });
+    }
+});
+
+// Update a Building
+app.put('/api/buildings/:id', upload.single('image'), async (req, res) => {
+    try {
+        const {
+            name,
+            description,
+            location,
+            investmentPrice,
+            returnOnInvestment,
+            numberOfRooms,
+            numberOfBathrooms,
+        } = req.body;
+
+        const building = await Building.findById(req.params.id);
+        if (!building) {
+            return res.status(404).json({ message: 'Building not found' });
+        }
+
+        building.name = name || building.name;
+        building.description = description || building.description;
+        building.location = location || building.location;
+        building.investmentPrice = investmentPrice || building.investmentPrice;
+        building.returnOnInvestment = returnOnInvestment || building.returnOnInvestment;
+        building.numberOfRooms = numberOfRooms || building.numberOfRooms;
+        building.numberOfBathrooms = numberOfBathrooms || building.numberOfBathrooms;
+
+        if (req.file) {
+            building.image = `/uploads/${req.file.filename}`;
+        }
+
+        await building.save();
+        res.json({ message: 'Building updated successfully', building });
+    } catch (error) {
+        console.error('Error updating building:', error);
+        res.status(500).json({ message: 'Error updating building' });
+    }
+});
+
+// Delete a Building
+app.delete('/api/buildings/:id', async (req, res) => {
+    try {
+        const building = await Building.findById(req.params.id);
+        if (!building) {
+            return res.status(404).json({ message: 'Building not found' });
+        }
+
+        await building.deleteOne();
+        res.json({ message: 'Building deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting building:', error);
+        res.status(500).json({ message: 'Error deleting building' });
+    }
 });
 
 // Get user details, including profits
